@@ -3,7 +3,7 @@ const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-// const mysql = require('mysql2');
+const mysql = require('mysql2');
 const db = require('./db/connection.js');
 const cTable = require('console.table');
 const inquirer = require('inquirer');
@@ -67,99 +67,10 @@ const addDeptPrompt = () => {
 });
 };
 
-// const addEmp = () => {
-//   inquirer.prompt([
-//     {
-//       type: 'input',
-//       name: 'fName',
-//       message: "What is the new Employee's first name? (Required)",
-//       validate: nameInput => {
-//         if (nameInput) {
-//           return true;
-//         } else {
-//           console.log('Please enter a name!');
-//           return false;
-//         }
-//       }
-//     },
-//     {
-//       type: 'input',
-//       name: 'lName',
-//       message: "What is the new Employee's last name? (Required)",
-//       validate: nameInput => {
-//         if (nameInput) {
-//           return true;
-//         } else {
-//           console.log('Please enter a name!');
-//           return false;
-//         }
-//       }
-//     }
-//   ])
-//     .then(res => {
-//       let fName = res.fName;
-//       let lName = res.lName;
 
-//       db.query("SELECT * FROM roles")
-//         .then(([rows]) => {
-//           let roles = rows;
-//           const roleChoices = roles.map(({ id, title }) => ({
-//             name: title,
-//             value: id
-//           }));
+const addEmp = async () => {
 
-//           inquirer.prompt({
-//             type: "list",
-//             name: "roleID",
-//             message: "What is the employee's role?",
-//             choices: roleChoices
-//           })
-//             .then(res => {
-//               let roleID = res.roleID;
-
-//               db.query("SELECT * FROM employee")
-//                 .then(([rows]) => {
-//                   let employees = rows;
-//                   const mgrChoices = roles.map(({ id, firstName, lastName }) => ({
-//                     fName: firstName,
-//                     lName: lastName,
-//                     value: id
-//                   }));
-
-//                   inquirer.prompt({
-//                     type: "list",
-//                     name: "managerID",
-//                     message: "Who is the employee's manager?",
-//                     choices: mgrChoices
-//                   })
-//                     .then(res => {
-//                       let employee = {
-//                         manager_id: res.managerID,
-//                         role_id: roleID,
-//                         first_name: fName,
-//                         last_name: lName
-//                       }
-
-//                       const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?);"
-//                       db.query(sql, employee);
-//                       init();
-//                     })
-//                     // .then(() = console.log("Employee Added"));
-//                 })
-//             })
-//         })
-
-//       })
-//     };
-
-
-
-// *************
-
-
-const addEmp = () => {
-
-  var roleRows = db.query("SELECT * FROM roles")
+  var roleRows = await db.query("SELECT * FROM roles")
     // .then(([rows]) => {
       // let roles = rows;
       var roleChoices = roleRows.map(({ id, title }) => ({
@@ -168,7 +79,7 @@ const addEmp = () => {
       }));
     // });
 
-  var empRows = db.query("SELECT * FROM employee")
+  var empRows = await db.query("SELECT * FROM employee")
     // .then(([rows]) => {
       // let employees = rows;
       
@@ -235,28 +146,6 @@ const addEmp = () => {
     })
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
