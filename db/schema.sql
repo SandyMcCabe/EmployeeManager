@@ -1,6 +1,10 @@
-DROP TABLE IF EXISTS employee;
-DROP TABLE IF EXISTS roles;
-DROP TABLE IF EXISTS department;
+DROP DATABASE IF EXISTS employees;
+CREATE DATABASE employees;
+USE employees;
+
+-- DROP TABLE IF EXISTS employee;
+-- DROP TABLE IF EXISTS roles;
+-- DROP TABLE IF EXISTS department;
 
 
 CREATE TABLE department (
@@ -32,10 +36,7 @@ role_id INTEGER,
      ON DELETE SET NULL,
 
 manager_id INTEGER NOT NULL REFERENCES employee
-  -- CONSTRAINT fk_manager
-  --    FOREIGN KEY (manager_id)
-  --    REFERENCES employee(id)
-  --    ON DELETE SET NULL
+
 );
 
 

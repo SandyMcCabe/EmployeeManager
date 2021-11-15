@@ -3,11 +3,10 @@ const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-const mysql = require('mysql2');
-const db = require('./db/connection');
+// const mysql = require('mysql2');
+const db = require('./db/connection.js');
 const cTable = require('console.table');
 const inquirer = require('inquirer');
-// const apiRoutes = require('./routes/apiRoutes');
 
 // Express middleware
 app.use(express.urlencoded({ extended: false }));
@@ -17,6 +16,249 @@ app.use(express.json());
 app.use((req, res) => {
   res.status(404).end();
 });
+
+function viewDepts() {
+  db.query("SELECT * FROM department", function (err, res) {
+    if (err) throw err;
+    console.table(res);
+    init();
+  })};
+
+function viewRoles() {
+  db.query("SELECT roles.*, department.dept_name AS dept_name FROM roles LEFT JOIN department ON roles.department_id = department.id", function (err, res) {
+    if (err) throw err;
+    console.table(res);
+    init();
+  })};
+
+
+function viewEmployees() {
+  db.query("SELECT * FROM employee", function (err, res) {
+    if (err) throw err;
+    console.table(res);
+    init();
+  })};
+
+const addDept = (newDept) => {
+  const sql = "INSERT INTO department (dept_name) VALUES(?);"
+  db.query(sql, newDept);
+  init()
+};
+
+const addDeptPrompt = () => {
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'What is the new Department name? (Required)',
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a name!');
+                    return false;
+                }
+            }
+        }
+      ])
+      .then((answer) => {
+        console.log(JSON.stringify(answer["name"], null, '  '));
+        addDept(answer["name"]);
+});
+};
+
+// const addEmp = () => {
+//   inquirer.prompt([
+//     {
+//       type: 'input',
+//       name: 'fName',
+//       message: "What is the new Employee's first name? (Required)",
+//       validate: nameInput => {
+//         if (nameInput) {
+//           return true;
+//         } else {
+//           console.log('Please enter a name!');
+//           return false;
+//         }
+//       }
+//     },
+//     {
+//       type: 'input',
+//       name: 'lName',
+//       message: "What is the new Employee's last name? (Required)",
+//       validate: nameInput => {
+//         if (nameInput) {
+//           return true;
+//         } else {
+//           console.log('Please enter a name!');
+//           return false;
+//         }
+//       }
+//     }
+//   ])
+//     .then(res => {
+//       let fName = res.fName;
+//       let lName = res.lName;
+
+//       db.query("SELECT * FROM roles")
+//         .then(([rows]) => {
+//           let roles = rows;
+//           const roleChoices = roles.map(({ id, title }) => ({
+//             name: title,
+//             value: id
+//           }));
+
+//           inquirer.prompt({
+//             type: "list",
+//             name: "roleID",
+//             message: "What is the employee's role?",
+//             choices: roleChoices
+//           })
+//             .then(res => {
+//               let roleID = res.roleID;
+
+//               db.query("SELECT * FROM employee")
+//                 .then(([rows]) => {
+//                   let employees = rows;
+//                   const mgrChoices = roles.map(({ id, firstName, lastName }) => ({
+//                     fName: firstName,
+//                     lName: lastName,
+//                     value: id
+//                   }));
+
+//                   inquirer.prompt({
+//                     type: "list",
+//                     name: "managerID",
+//                     message: "Who is the employee's manager?",
+//                     choices: mgrChoices
+//                   })
+//                     .then(res => {
+//                       let employee = {
+//                         manager_id: res.managerID,
+//                         role_id: roleID,
+//                         first_name: fName,
+//                         last_name: lName
+//                       }
+
+//                       const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?);"
+//                       db.query(sql, employee);
+//                       init();
+//                     })
+//                     // .then(() = console.log("Employee Added"));
+//                 })
+//             })
+//         })
+
+//       })
+//     };
+
+
+
+// *************
+
+
+const addEmp = () => {
+
+  var roleRows = db.query("SELECT * FROM roles")
+    // .then(([rows]) => {
+      // let roles = rows;
+      var roleChoices = roleRows.map(({ id, title }) => ({
+        name: title,
+        value: id
+      }));
+    // });
+
+  var empRows = db.query("SELECT * FROM employee")
+    // .then(([rows]) => {
+      // let employees = rows;
+      
+      var mgrChoices = empRows.map(({ id, firstName, lastName }) => ({
+        fName: firstName,
+        lName: lastName,
+        value: id
+      }));
+    // });
+
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'fName',
+      message: "What is the new Employee's first name? (Required)",
+      validate: nameInput => {
+        if (nameInput) {
+          return true;
+        } else {
+          console.log('Please enter a name!');
+          return false;
+        }
+      }
+    },
+    {
+      type: 'input',
+      name: 'lName',
+      message: "What is the new Employee's last name? (Required)",
+      validate: nameInput => {
+        if (nameInput) {
+          return true;
+        } else {
+          console.log('Please enter a name!');
+          return false;
+        }
+      }
+    },
+    {
+      type: "list",
+      name: "roleID",
+      message: "What is the employee's role?",
+      choices: roleChoices
+    },
+    {
+      type: "list",
+      name: "managerID",
+      message: "Who is the employee's manager?",
+      choices: mgrChoices
+    }
+  ])
+
+  inquirer.prompt()
+    .then(res => {
+      let employee = {
+        manager_id: res.managerID,
+        role_id: res.roleID,
+        first_name: res.fName,
+        last_name: res.lName
+      }
+
+      const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?);"
+      db.query(sql, employee);
+      init();
+    })
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const questions = () => {
   return inquirer.prompt([
@@ -31,31 +273,58 @@ const questions = () => {
               'Add a Role',
               'Add an Employee',
               "Update an Employee's Role",
-              "Update an Employee's Manager (extra)",
-              'View all Employees by Department (extra)',
-              'View the Total Utilized Budget by Department (sum of salaries, extra)']
+              'Quit'
+            ]
   }
 ])
-.then((answers) => {
-  console.log(JSON.stringify(answers, null, '  '));
+.then((answer) => {
+  console.log(JSON.stringify(answer["action"], null, '  '));
+  decider(answer["action"]);
 });
 };
 
+function decider(answer) {
+  switch (answer) {
+    case 'View all Departments':
+      viewDepts();
+      break;
+    case 'View all Roles':
+      viewRoles();  
+      break;
+    case 'View all Employees':
+      viewEmployees();
+      break;
+    case 'Add a Department':
+      addDeptPrompt();
+      break;
+    case 'Add a Role':
+      break;
+    case 'Add an Employee':
+      addEmp();
+      break;
+    case "Update an Employee's Role":
+      break;
+    case 'Quit':
+      process.exit();
+  }
+}
+
+function init() {
+  //find out what the user wants to do
+  questions()
+  //then decide what to do with their answer
+  .then(questionData => {
+      decider(questionData);
+  })
+}
 
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  questions();
+  init();
 });
 
-// Start server after DB connection
-// db.connect(err => {
-//   if (err) throw err;
-//   console.log('Database connected.');
-//   app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-//   });
-// });
+
 
 
 
