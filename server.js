@@ -3,7 +3,7 @@ const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-const mysql = require('mysql2');
+// const mysql = require('mysql2');
 const db = require('./db/connection.js');
 const cTable = require('console.table');
 const inquirer = require('inquirer');
@@ -17,19 +17,24 @@ app.use((req, res) => {
   res.status(404).end();
 });
 
+var roleChoices = [];
+var mgrChoices = [];
+
 function viewDepts() {
   db.query("SELECT * FROM department", function (err, res) {
     if (err) throw err;
     console.table(res);
     init();
-  })};
+  })
+};
 
 function viewRoles() {
   db.query("SELECT roles.*, department.dept_name AS dept_name FROM roles LEFT JOIN department ON roles.department_id = department.id", function (err, res) {
     if (err) throw err;
     console.table(res);
     init();
-  })};
+  })
+};
 
 
 function viewEmployees() {
@@ -37,7 +42,8 @@ function viewEmployees() {
     if (err) throw err;
     console.table(res);
     init();
-  })};
+  })
+};
 
 const addDept = (newDept) => {
   const sql = "INSERT INTO department (dept_name) VALUES(?);"
@@ -46,49 +52,53 @@ const addDept = (newDept) => {
 };
 
 const addDeptPrompt = () => {
-    return inquirer.prompt([
-        {
-            type: 'input',
-            name: 'name',
-            message: 'What is the new Department name? (Required)',
-            validate: nameInput => {
-                if (nameInput) {
-                    return true;
-                } else {
-                    console.log('Please enter a name!');
-                    return false;
-                }
-            }
+  return inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: 'What is the new Department name? (Required)',
+      validate: nameInput => {
+        if (nameInput) {
+          return true;
+        } else {
+          console.log('Please enter a name!');
+          return false;
         }
-      ])
-      .then((answer) => {
-        console.log(JSON.stringify(answer["name"], null, '  '));
-        addDept(answer["name"]);
-});
+      }
+    }
+  ])
+    .then((answer) => {
+      console.log(JSON.stringify(answer["name"], null, '  '));
+      addDept(answer["name"]);
+    });
 };
+
 
 
 const addEmp = async () => {
 
-  var roleRows = await db.query("SELECT * FROM roles")
-    // .then(([rows]) => {
-      // let roles = rows;
-      var roleChoices = roleRows.map(({ id, title }) => ({
-        name: title,
-        value: id
-      }));
-    // });
+  // var roleChoices = [];
+  // var mgrChoices = [];
 
-  var empRows = await db.query("SELECT * FROM employee")
-    // .then(([rows]) => {
-      // let employees = rows;
-      
-      var mgrChoices = empRows.map(({ id, firstName, lastName }) => ({
-        fName: firstName,
-        lName: lastName,
-        value: id
-      }));
-    // });
+  // db.query("SELECT * FROM roles", function (err, res) {
+  //   if (err) throw err;
+
+  //       roleChoices = res.map(({ id, title }) => ({
+  //       id: id,
+  //       title: title
+  //     }));
+  //     // console.log(roleChoices);
+  //   });
+
+  // db.query("SELECT * FROM employee", function (err, res) {
+  // if (err) throw err;
+  //         mgrChoices = res.map(({ id, first_name, last_name }) => ({
+  //     id: id,
+  //     firstName: first_name,
+  //     lastName: last_name
+  //   }));
+  //   // console.log(mgrChoices);
+  // });
 
   inquirer.prompt([
     {
@@ -122,63 +132,75 @@ const addEmp = async () => {
       name: "roleID",
       message: "What is the employee's role?",
       choices: roleChoices
+      // choices: [1, 2, 3, 4, 5]
     },
     {
       type: "list",
       name: "managerID",
       message: "Who is the employee's manager?",
       choices: mgrChoices
+      // choices: [1, 2, 3, 4, 5]
     }
   ])
 
-  inquirer.prompt()
+    // inquirer.prompt()
     .then(res => {
+      // console.log("something");
       let employee = {
-        manager_id: res.managerID,
-        role_id: res.roleID,
         first_name: res.fName,
-        last_name: res.lName
+        last_name: res.lName,
+        role_id: JSON.parse(res.roleID).id,
+        manager_id: JSON.parse(res.managerID).id
       }
+      console.log(employee);
 
-      const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?);"
+      // const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)"
+      const sql = "INSERT INTO employee SET ?"
       db.query(sql, employee);
-      init();
+      
+      // console.log("after the employee is made");
     })
+    .then(
+      () => {init();}
+    )
 
 };
 
 
 
 const questions = () => {
+
+
   return inquirer.prompt([
     {
       type: 'list',
       name: 'action',
       message: 'What would you like to do?',
-      choices: ['View all Departments', 
-              'View all Roles', 
-              'View all Employees', 
-              'Add a Department',
-              'Add a Role',
-              'Add an Employee',
-              "Update an Employee's Role",
-              'Quit'
-            ]
-  }
-])
-.then((answer) => {
-  console.log(JSON.stringify(answer["action"], null, '  '));
-  decider(answer["action"]);
-});
+      choices: ['View all Departments',
+        'View all Roles',
+        'View all Employees',
+        'Add a Department',
+        'Add a Role',
+        'Add an Employee',
+        "Update an Employee's Role",
+        'Quit'
+      ]
+    }
+  ])
+    .then((answer) => {
+      console.log(JSON.stringify(answer["action"], null, '  '));
+      decider(answer["action"]);
+    });
 };
 
 function decider(answer) {
+
   switch (answer) {
     case 'View all Departments':
       viewDepts();
       break;
     case 'View all Roles':
-      viewRoles();  
+      viewRoles();
       break;
     case 'View all Employees':
       viewEmployees();
@@ -199,12 +221,49 @@ function decider(answer) {
 }
 
 function init() {
+
+
+  db.query("SELECT * FROM roles", function (err, res) {
+    if (err) throw err;
+
+    roleChoices = res.map(({ id, title }) => {
+      return JSON.stringify({
+          id: id,
+          title: title
+        })
+    });
+    // console.log(roleChoices);
+  });
+
+  db.query("SELECT * FROM employee", function (err, res) {
+    if (err) throw err;
+
+    mgrChoices = res.map(({ id, first_name, last_name }) => {
+      return JSON.stringify({
+        id: id,
+            firstName: first_name,
+            lastName: last_name
+        })
+    });
+    // console.log(roleChoices);
+  });
+
+  // db.query("SELECT * FROM employee", function (err, res) {
+  //   if (err) throw err;
+  //   mgrChoices = res.map(({ id, first_name, last_name }) => ({
+  //     id: id,
+  //     firstName: first_name,
+  //     lastName: last_name
+  //   }));
+  //   console.log(mgrChoices);
+  // });
+
   //find out what the user wants to do
   questions()
-  //then decide what to do with their answer
-  .then(questionData => {
+    //then decide what to do with their answer
+    .then(questionData => {
       decider(questionData);
-  })
+    })
 }
 
 
