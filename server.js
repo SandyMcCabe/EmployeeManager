@@ -3,22 +3,17 @@ const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-// const mysql = require('mysql2');
 const db = require('./db/connection.js');
 const cTable = require('console.table');
 const inquirer = require('inquirer');
 
 // Express middleware
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-
-// Default response for any other request (Not Found)
-app.use((req, res) => {
-  res.status(404).end();
-});
+// app.use(express.urlencoded({ extended: false }));
+// app.use(express.json());
 
 var roleChoices = [];
-var mgrChoices = [];
+var empChoices = [];
+var deptChoices = [];
 
 function viewDepts() {
   db.query("SELECT * FROM department", function (err, res) {
@@ -73,32 +68,88 @@ const addDeptPrompt = () => {
     });
 };
 
+const addRole = async () => {
 
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: "What is the title of the new role? (Required)",
+      validate: nameInput => {
+        if (nameInput) {
+          return true;
+        } else {
+          console.log('Please enter a title!');
+          return false;
+        }
+      }
+    },
+    {
+      type: 'input',
+      name: 'salary',
+      message: "What is the salary for the new role? (Required)",
+      validate: salaryInput => {
+        if (salaryInput) {
+          return true;
+        } else {
+          console.log('Please enter a salary!');
+          return false;
+        }
+      }
+    },
+    {
+      type: "list",
+      name: "deptID",
+      message: "In what department will the new role be?",
+      choices: deptChoices
+    }
+      ])
+      .then(res => {
+        let newRole = {
+          title: res.name,
+          salary: res.salary,
+          department_id: JSON.parse(res.deptID).id
+        }
+    
+        const sql = "INSERT INTO roles SET ?"
+        db.query(sql, newRole);
+      })
+      .then(
+        () => { init(); }
+      )
+  
+  };
+
+  const updateEmpRole = () => {
+    inquirer.prompt([
+      {
+      type: "list",
+      name: "employee",
+      message: "Who is the employee?",
+      choices: empChoices
+    },
+    {
+      type: "list",
+      name: "roleID",
+      message: "What is their new role?",
+      choices: roleChoices
+    }
+  ])
+  .then(res => {
+  
+   let empID = JSON.parse(res.employee).id;
+     
+  let roleID = JSON.parse(res.roleID).id;
+
+ db.query("UPDATE employee SET role_id = ? WHERE id = ?", [roleID, empID] );
+
+  })
+  .then(
+    () => { init(); }
+  )
+};
 
 const addEmp = async () => {
-
-  // var roleChoices = [];
-  // var mgrChoices = [];
-
-  // db.query("SELECT * FROM roles", function (err, res) {
-  //   if (err) throw err;
-
-  //       roleChoices = res.map(({ id, title }) => ({
-  //       id: id,
-  //       title: title
-  //     }));
-  //     // console.log(roleChoices);
-  //   });
-
-  // db.query("SELECT * FROM employee", function (err, res) {
-  // if (err) throw err;
-  //         mgrChoices = res.map(({ id, first_name, last_name }) => ({
-  //     id: id,
-  //     firstName: first_name,
-  //     lastName: last_name
-  //   }));
-  //   // console.log(mgrChoices);
-  // });
 
   inquirer.prompt([
     {
@@ -132,41 +183,32 @@ const addEmp = async () => {
       name: "roleID",
       message: "What is the employee's role?",
       choices: roleChoices
-      // choices: [1, 2, 3, 4, 5]
     },
     {
       type: "list",
       name: "managerID",
       message: "Who is the employee's manager?",
-      choices: mgrChoices
-      // choices: [1, 2, 3, 4, 5]
+      choices: empChoices
     }
   ])
 
-    // inquirer.prompt()
     .then(res => {
-      // console.log("something");
       let employee = {
         first_name: res.fName,
         last_name: res.lName,
         role_id: JSON.parse(res.roleID).id,
         manager_id: JSON.parse(res.managerID).id
       }
-      console.log(employee);
 
-      // const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)"
       const sql = "INSERT INTO employee SET ?"
       db.query(sql, employee);
-      
-      // console.log("after the employee is made");
+
     })
     .then(
-      () => {init();}
+      () => { init(); }
     )
 
 };
-
-
 
 const questions = () => {
 
@@ -209,11 +251,13 @@ function decider(answer) {
       addDeptPrompt();
       break;
     case 'Add a Role':
+      addRole();
       break;
     case 'Add an Employee':
       addEmp();
       break;
     case "Update an Employee's Role":
+      updateEmpRole();
       break;
     case 'Quit':
       process.exit();
@@ -222,41 +266,37 @@ function decider(answer) {
 
 function init() {
 
-
   db.query("SELECT * FROM roles", function (err, res) {
     if (err) throw err;
 
     roleChoices = res.map(({ id, title }) => {
       return JSON.stringify({
-          id: id,
-          title: title
-        })
+        id: id,
+        title: title
+      })
     });
-    // console.log(roleChoices);
   });
 
   db.query("SELECT * FROM employee", function (err, res) {
     if (err) throw err;
-
-    mgrChoices = res.map(({ id, first_name, last_name }) => {
+    empChoices = res.map(({ id, first_name, last_name }) => {
       return JSON.stringify({
         id: id,
-            firstName: first_name,
-            lastName: last_name
-        })
+        firstName: first_name,
+        lastName: last_name
+      })
     });
-    // console.log(roleChoices);
   });
 
-  // db.query("SELECT * FROM employee", function (err, res) {
-  //   if (err) throw err;
-  //   mgrChoices = res.map(({ id, first_name, last_name }) => ({
-  //     id: id,
-  //     firstName: first_name,
-  //     lastName: last_name
-  //   }));
-  //   console.log(mgrChoices);
-  // });
+  db.query("SELECT * FROM department", function (err, res) {
+    if (err) throw err;
+    deptChoices = res.map(({ id, dept_name }) => {
+      return JSON.stringify({
+        id: id,
+        depttName: dept_name
+      })
+    });
+  });
 
   //find out what the user wants to do
   questions()
