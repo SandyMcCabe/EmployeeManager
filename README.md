@@ -6,10 +6,12 @@ A database storage system to track employees along with their role, department, 
 ```
 
 ## Website
-
+```
 This code is not currently deployed to a website.
-
-![alt text](./assets/images/Scheduler.JPG "Scheduler")
+The link to the walkthrough video is  
+https://drive.google.com/file/d/1BzK0gniiFjTmDsEKALszzW3xDVmnnh-t/view?usp=sharing  
+```
+![alt text](employee_mgr.JPG "Employee Manager")
 
 ## Credits
 All code written by myself
