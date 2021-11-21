@@ -1,9 +1,11 @@
 # Employee Manager
 
 ## Description
-```
-A database storage system to track employees along with their role, department, manager and salary.  Not only can thisprogram be used to view the employees, roles, and departments, it can also add roles, add departments, add employees, as well as update an employee's role
-```
+
+A database storage system to track employees along with their role, department, manager and salary.   
+Not only can thisprogram be used to view the employees, roles, and departments,   
+it can also add roles, add departments, add employees, as well as update an employee's role   
+
 
 ## Website
 ```
