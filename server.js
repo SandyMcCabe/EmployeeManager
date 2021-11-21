@@ -7,12 +7,13 @@ const mysql = require('mysql2');
 const db = require('./db/connection');
 const cTable = require('console.table');
 const inquirer = require('inquirer');
-// const apiRoutes = require('./routes/apiRoutes');
 
+// global variables used in the inquirer prompts
 var roleChoices = [];
 var empChoices = [];
 var deptChoices = [];
 
+// To view all dapartments
 function viewDepts() {
   db.query("SELECT * FROM department", function (err, res) {
     if (err) throw err;
@@ -21,29 +22,32 @@ function viewDepts() {
   })
 };
 
+// To view all roleChoices, including ID, salary, and dept
 function viewRoles() {
-  db.query("SELECT roles.*, department.dept_name AS dept_name FROM roles LEFT JOIN department ON roles.department_id = department.id", function (err, res) {
+  db.query("SELECT roles.id, roles.title, roles.salary, department.dept_name AS dept_name FROM roles LEFT JOIN department ON roles.department_id = department.id", function (err, res) {
     if (err) throw err;
     console.table(res);
     init();
   })
 };
 
-
+// To view all employees with name, id, title, dept, salary, and manager name
 function viewEmployees() {
-  db.query("SELECT * FROM employee", function (err, res) {
+  db.query("SELECT e.id AS id, e.first_name AS first_name, e.last_name AS last_name, r.title, d.dept_name, r.salary, m.first_name AS mgr_first, m.last_name AS mgr_last FROM employee e, employee m, roles r, department d WHERE e.manager_id = m.id and e.role_id = r.id and r.department_id = d.id", function (err, res) {
     if (err) throw err;
     console.table(res);
     init();
   })
 };
 
+//adding a new department
 const addDept = (newDept) => {
   const sql = "INSERT INTO department (dept_name) VALUES(?);"
   db.query(sql, newDept);
   init()
 };
 
+//getting the information needed to add the department
 const addDeptPrompt = () => {
   return inquirer.prompt([
     {
@@ -66,8 +70,8 @@ const addDeptPrompt = () => {
     });
 };
 
+//adding a new role
 const addRole = async () => {
-
   inquirer.prompt([
     {
       type: 'input',
@@ -101,26 +105,26 @@ const addRole = async () => {
       message: "In what department will the new role be?",
       choices: deptChoices
     }
-      ])
-      .then(res => {
-        let newRole = {
-          title: res.name,
-          salary: res.salary,
-          department_id: JSON.parse(res.deptID).id
-        }
-    
-        const sql = "INSERT INTO roles SET ?"
-        db.query(sql, newRole);
-      })
-      .then(
-        () => { init(); }
-      )
-  
-  };
+  ])
+    .then(res => {
+      let newRole = {
+        title: res.name,
+        salary: res.salary,
+        department_id: JSON.parse(res.deptID).id
+      }
 
-  const updateEmpRole = () => {
-    inquirer.prompt([
-      {
+      const sql = "INSERT INTO roles SET ?"
+      db.query(sql, newRole);
+    })
+    .then(
+      () => { init(); }
+    )
+};
+
+//update an employee's role
+const updateEmpRole = () => {
+  inquirer.prompt([
+    {
       type: "list",
       name: "employee",
       message: "Who is the employee?",
@@ -133,22 +137,18 @@ const addRole = async () => {
       choices: roleChoices
     }
   ])
-  .then(res => {
-  
-   let empID = JSON.parse(res.employee).id;
-     
-  let roleID = JSON.parse(res.roleID).id;
-
- db.query("UPDATE employee SET role_id = ? WHERE id = ?", [roleID, empID] );
-
-  })
-  .then(
-    () => { init(); }
-  )
+    .then(res => {
+      let empID = JSON.parse(res.employee).id;
+      let roleID = JSON.parse(res.roleID).id;
+      db.query("UPDATE employee SET role_id = ? WHERE id = ?", [roleID, empID]);
+    })
+    .then(
+      () => { init(); }
+    )
 };
 
+//add a new employee
 const addEmp = async () => {
-
   inquirer.prompt([
     {
       type: 'input',
@@ -197,20 +197,16 @@ const addEmp = async () => {
         role_id: JSON.parse(res.roleID).id,
         manager_id: JSON.parse(res.managerID).id
       }
-
       const sql = "INSERT INTO employee SET ?"
       db.query(sql, employee);
-
     })
     .then(
       () => { init(); }
     )
-
 };
 
+//the main list of action choices
 const questions = () => {
-
-
   return inquirer.prompt([
     {
       type: 'list',
@@ -233,8 +229,8 @@ const questions = () => {
     });
 };
 
+//selecting the various functions based on the the choice from the action selection
 function decider(answer) {
-
   switch (answer) {
     case 'View all Departments':
       viewDepts();
@@ -262,11 +258,11 @@ function decider(answer) {
   }
 }
 
+//start here!
 function init() {
-
+  //set the global arrays to use in the prompts
   db.query("SELECT * FROM roles", function (err, res) {
     if (err) throw err;
-
     roleChoices = res.map(({ id, title }) => {
       return JSON.stringify({
         id: id,
@@ -274,7 +270,7 @@ function init() {
       })
     });
   });
-
+  //set the global arrays to use in the prompts
   db.query("SELECT * FROM employee", function (err, res) {
     if (err) throw err;
     empChoices = res.map(({ id, first_name, last_name }) => {
@@ -285,7 +281,7 @@ function init() {
       })
     });
   });
-
+  //set the global arrays to use in the prompts
   db.query("SELECT * FROM department", function (err, res) {
     if (err) throw err;
     deptChoices = res.map(({ id, dept_name }) => {
